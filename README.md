@@ -23,17 +23,50 @@ Ensure your project repository contains the `metagenomics_cfm` directory with al
 
 -----
 
-## 2\. 💾 Data Preparation and Modes
+
+## 2\. 💾 Data Preparation and Modes (Revised)
 
 The library loads data directly from **CSV files** via the `data_path` parameter. It automatically handles feature selection, categorical **One-Hot Encoding**, and train/validation splitting.
 
 ### Data Loading Modes
 
+You must choose one of the following modes by setting the appropriate parameters in `CFMConfig`.
+
 | Mode | Configuration | Description |
 | :--- | :--- | :--- |
 | **Mode 1: Single File + Column** | `data_path='file.csv'`, **`condition_column_name='Age_Group'`** | Features ($\mathbf{X}$) and condition ($\mathbf{Y}$) are in one CSV file. **Recommended method.** |
 | **Mode 2: Two Separate Files** | `data_path='features.csv'`, **`cond_path='metadata.csv'`** | $\mathbf{X}$ and $\mathbf{Y}$ are split across two aligned CSV files. |
+| **Mode 3: Unconditional** | `data_path='file.csv'`, **`condition_column_name=None`** | Training a generative model using only features ($\mathbf{X}$), ignoring any conditional columns. |
 
+-----
+
+## 3\. 🚀 Core Workflow: One-Shot Generation (Example Mode 3)
+
+### Unconditional Example (Mode 3)
+
+This is the simplest configuration, used when you want a general generative model that does not depend on metadata.
+
+```python
+from metagenomics_cfm import generate_samples_from_csv
+
+# 1. Define input file and desired output
+DATA_FILE = "data/all_features.csv" 
+NUM_SAMPLES = 100
+
+# 2. Configure for Mode 3: Omit the condition_column_name parameter
+synthetic_data = generate_samples_from_csv(
+    data_path=DATA_FILE,
+    num_samples=NUM_SAMPLES,
+    
+    # --- Mode 3 Setup ---
+    # condition_column_name is omitted or set to None
+    
+    epochs=20, 
+    device='cpu' 
+)
+
+print(f"Generated samples shape (Unconditional): {synthetic_data.shape}")
+```
 -----
 
 ## 3\. 🚀 Core Workflow: One-Shot Generation
