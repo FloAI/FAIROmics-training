@@ -118,3 +118,36 @@ cfg = CFMConfig(
     solver="euler_maruyama"            
 )
 ```
+
+# ------------------------------------------------------------------
+# Applying CLR transform
+# ------------------------------------------------------------------
+
+def generate_samples_from_csv(
+    data_path: str,
+    # ... (other arguments) ...
+) -> np.ndarray:
+    
+    # ... (Step 1 & 2: Configuration and Loading) ...
+    
+    print(f"Loading data from {cfg.data_path}...")
+    data, cond, x_dim, cond_dim = load_data_from_config(cfg)
+    
+    # --- START CLR INTEGRATION ---
+    print("Applying Centered Log-Ratio (CLR) transformation...")
+    
+    # NOTE: This assumes your CSV features (data) are non-negative counts or 
+    # relative abundances that require CLR. If the data is already transformed 
+    # (e.g., already log-normalized), skip this step.
+    
+    from .data_utils import apply_clr_transform # Import CLR utility locally
+    
+    data = apply_clr_transform(data) 
+    
+    print(f"CLR successful. Feature dimension remains ({data.shape[1]}).")
+    # --- END CLR INTEGRATION ---
+    
+    # 3. Prepare Datasets (Splitting and Machine Initialization follow here)
+    cfg.cond_dim = cond_dim 
+    
+    # ... (rest of the function continues) ...
