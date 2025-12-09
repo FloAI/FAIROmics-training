@@ -133,6 +133,25 @@ While the primary loss in CFM is still the $\text{L}_2$ distance between the pre
 Here is the final table detailing the losses and their primary use case, ready for your `README.md`.
 
 ---
+That's a crucial piece of the puzzle! The core of your library is the velocity model, $\mathbf{v}_\theta(\mathbf{x}_t, t, \mathbf{y})$, which predicts the flow direction.
+
+The library includes flexible neural network architectures suitable for high-dimensional and tabular data, allowing you to choose the complexity and approach that best suits your feature set.
+
+Here is the table detailing the model architectures available in your library for the velocity field, suitable for inclusion in your `README.md`.
+
+---
+
+## 💻 Model Architectures for Velocity Field
+
+The choice of model architecture is controlled by the `model_type` parameter in your configuration. These models are designed to map the noisy input state ($\mathbf{x}_t$), time ($t$), and condition ($\mathbf{y}$) to the target velocity vector ($\mathbf{v}_\theta$).
+
+| Model Key | Architecture | Description | Use Case |
+| :--- | :--- | :--- | :--- |
+| **`"mlp"`** | Multi-Layer Perceptron (MLP) | The standard feed-forward network baseline. Suitable for low- to moderate-dimensional, unstructured numerical data. | General tabular data, quick iteration. |
+| **`"transformer"`** | Transformer Encoder | Uses a self-attention mechanism to model long-range feature dependencies, treating features as tokens. | High-dimensional data (like metagenomics) where relationships between far-apart features are critical. |
+| **`"autoencoder_latent"`** | Uses an MLP, but the path geometry (`interpolant="latent"`) is defined in a learned Autoencoder space. | Generation on a learned manifold; used when the intrinsic dimensionality of the data is much lower than the observation space. | Dimensionality reduction, non-linear manifold learning. |
+
+---
 
 ### E. Specialized Loss Functions
 
