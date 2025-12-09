@@ -1,6 +1,6 @@
-That's great\! You want this comprehensive list of supported flow strategies included in your final `README.md` to highlight the library's advanced capabilities beyond standard CFM.
+Here is the complete content for the **`README.md`** file, specifically structured for GitHub and incorporating the essential information about your library's advanced flow matching features, data loading modes, and usage instructions.
 
-Here is the complete content for the **`README.md`** file, now incorporating this detailed feature list and the strategic use of image tags.
+I've ensured the three data loading modes are prominently featured.
 
 -----
 
@@ -9,7 +9,7 @@ Here is the complete content for the **`README.md`** file, now incorporating thi
 [](https://www.python.org/downloads/)
 [](https://opensource.org/licenses/MIT)
 
-A comprehensive and modular library for high-dimensional generative modeling using **Conditional Flow Matching (CFM)**. This tool is designed to handle complex datasets like those found in metagenomics, supporting various path interpolants, optimal transport coupling, and both **ODE** and **SDE** integration for sampling.
+A comprehensive and modular library for high-dimensional generative modeling using **Conditional Flow Matching (CFM)**. This tool is designed to handle complex datasets like those found in metagenomics, supporting various path interpolants, advanced **OT-based coupling**, and both **ODE** and **SDE** integration for sampling.
 
 -----
 
@@ -25,26 +25,31 @@ pip install numpy pandas torch scikit-learn tqdm
 
 ### Library Structure
 
-Ensure your project repository contains the `metagenomics_cfm` directory with all necessary files, as the library relies on precise relative imports.
+The library requires a specific package structure. Ensure your repository contains the `metagenomics_cfm` directory with all the core Python files (e.g., `machine.py`, `config.py`, `coupling.py`).
 
 -----
 
-## 2\. 💾 Data Preparation and Modes
+## 2\. 💾 Data Preparation and Loading Modes
 
 The library loads data directly from **CSV files** via the `data_path` parameter. It automatically handles feature selection, categorical **One-Hot Encoding**, and train/validation splitting.
 
 ### Data Loading Modes
 
-Mode,Configuration,Description
-Mode 1: Single File + Column,"data_path='file.csv', condition_column_name='Age_Group'",Features (X) and condition (Y) are in one CSV file. Recommended method.
-Mode 2: Two Separate Files,"data_path='features.csv', cond_path='metadata.csv'",X and Y are split across two aligned CSV files.
-Mode 3: Unconditional,"data_path='file.csv', condition_column_name=None","Training a generative model using only features (X), ignoring any conditional columns."
+You must choose one of the following modes by setting the appropriate parameters in your configuration:
+
+| Mode | Configuration Parameters | Description |
+| :--- | :--- | :--- |
+| **Mode 1: Single File + Column** | `data_path='file.csv'`, **`condition_column_name='Age_Group'`** | Features ($\mathbf{X}$) and condition ($\mathbf{Y}$) are in one CSV file. **Recommended method.** |
+| **Mode 2: Two Separate Files** | `data_path='features.csv'`, **`cond_path='metadata.csv'`** | $\mathbf{X}$ and $\mathbf{Y}$ are split across two aligned CSV files. |
+| **Mode 3: Unconditional** | `data_path='file.csv'`, **`condition_column_name=None`** | Training a generative model using only features ($\mathbf{X}$), ignoring any conditional columns. |
+
+-----
 
 ## 3\. 🚀 Core Workflow: One-Shot Generation
 
 Use the `generate_samples_from_csv` function for the fastest end-to-end workflow: loading, training (with a split), and sampling in one call.
 
-### Conditional Example
+### Conditional Example (Mode 1)
 
 ```python
 from metagenomics_cfm import generate_samples_from_csv
@@ -57,8 +62,13 @@ NUM_SAMPLES = 50
 synthetic_data = generate_samples_from_csv(
     data_path=DATA_FILE,
     num_samples=NUM_SAMPLES,
+    
+    # Mode 1 Setup
     condition_column_name="Device_Type", 
-    epochs=40
+    
+    # Training Overrides
+    epochs=40, 
+    device='cuda',
 )
 ```
 
@@ -66,10 +76,8 @@ synthetic_data = generate_samples_from_csv(
 
 To control the generated output, you must provide the exact **one-hot template vector** ($\mathbf{y}_{template}$) that represents the desired category.
 
-The vector must be shaped $(1, C)$ and match the dimensions created by the automatic encoding of your categorical column.
-
 ```python
-# The vector must be manually verified to match the encoding order (e.g., [Healthy, Diseased, Other])
+# Assuming the vector [0.0, 1.0, 0.0] represents the target category ('Mobile')
 template_np = np.array([[0.0, 1.0, 0.0]]) 
 
 generated_samples = cfm_machine.sample(
@@ -82,34 +90,31 @@ generated_samples = cfm_machine.sample(
 
 ## 4\. 🔬 Supported Flow Matching Variants
 
-Your library is equipped to handle a wide range of state-of-the-art flow matching strategies, defined by their target joint distribution $q(\mathbf{z})$ and path geometry $\mathbf{x}(t)$.
+Your library supports a broad range of state-of-the-art CFM variants, defined by their coupling and path geometry.
 
 ### A. Endpoint Coupling Strategies ($q(\mathbf{z})$)
 
-These variants define how the source ($\mathbf{x}_0$) and target ($\mathbf{x}_1$) endpoints are coupled, affecting the target velocity field $\mathbf{v}^*$.
+These variants define the target joint distribution of the endpoints.
 
-| CFM Variant Name | Target Joint $q(\mathbf{z})$ | Internal Coupling Key | Description |
-| :--- | :--- | :--- | :--- |
-| **ConditionalFlowMatcher** | $q(\mathbf{x}_0)q(\mathbf{x}_1)$ | `"independent"` | Standard independent endpoint CFM. |
-| **TargetConditionalFlowMatcher** | $q(\mathbf{x}_1)$ | `"target_cfm"` | Learns flow from Gaussian ($\mathbf{x}_0$) to Data ($\mathbf{x}_1$). |
-| **VariancePreservingCFM** | $q(\mathbf{x}_0)q(\mathbf{x}_1)$ | `"independent"` | Uses independent coupling with the specialized VP path. |
-| **ExactOT-CFM / SchrodingerBridgeCFM** | $\pi(\mathbf{x}_0, \mathbf{x}_1)$ or $\pi_{\epsilon}(\mathbf{x}_0, \mathbf{x}_1)$ | `"schrodinger_bridge_cfm"` | Approximates Optimal Transport (OT) or Schrödinger Bridge coupling via **minibatch Sinkhorn optimization**. |
-
-### B. Path Geometries and Specialized Flows
-
-These interpolation methods define the path $\mathbf{x}(t)$ regardless of endpoint coupling.
-
-| Interpolant Key | Geometry / Concept | Primary Use Case |
+| CFM Variant Name | Target Joint $q(\mathbf{z})$ | Implementation Strategy |
 | :--- | :--- | :--- |
-| **`"linear"`** | Straight-line path (Standard) | General, Euclidean data, baseline testing. |
-| **`"alpha_flow"`** | **Generalized Geodesic Path.** | Compositional data, flows on statistical manifolds (e.g., $\alpha=0$ is log-Euclidean). |
-| **`"log"`** | Log-Euclidean path. | **Compositional data** (counts, relative abundances), ensuring positivity. |
-| **`"spherical"`** | Geodesic path on a hypersphere. | Normalized data, directional features. |
-| **`"vp"`** | Variance-Preserving (VP) path. | Flows where maintaining noise variance structure is key. |
-| **`"sparseaware"`** | Zero-aware path. | Improves stability for sparse data by smoothing paths near zero values. |
-| **`"latent"`** | Path in a lower-dimensional latent space. | Reducing interpolation complexity for high-dimensional data. |
+| **ConditionalFlowMatcher** | $q(\mathbf{x}_0)q(\mathbf{x}_1)$ | Standard **Independent** coupling. |
+| **TargetConditionalFlowMatcher** | $q(\mathbf{x}_1)$ | Flow learned from **Gaussian Prior** ($\mathbf{x}_0$) to **Data** ($\mathbf{x}_1$). |
+| **ExactOT-CFM / SchrodingerBridgeCFM** | $\pi(\mathbf{x}_0, \mathbf{x}_1)$ or $\pi_{\epsilon}(\mathbf{x}_0, \mathbf{x}_1)$ | Approximates OT/SB joint distribution via **minibatch Sinkhorn optimization**. |
 
-### C. SDE vs. ODE Solvers
+### B. Path Geometries and Solvers
+
+These define the specific nature of the interpolation $\mathbf{x}(t)$.
+
+| Key | Geometry / Dynamics | Use Case |
+| :--- | :--- | :--- |
+| **`"linear"`** | Standard straight-line path. | General data, simplest flow. |
+| **`"alpha_flow"`** | **Generalized Geodesic Path.** | Compositional data, flows on statistical manifolds. |
+| **`"log"`** | Log-Euclidean path. | **Compositional data** (counts, relative abundances), ensuring positivity. |
+| **`"sparseaware"`** | Zero-aware path. | Improves stability for **sparse data** by smoothing paths near zero. |
+| **`"vp"`** / **`"variance_preserving_cfm"`** | Maintains variance structure over time. | Flows built on diffusion model principles. |
+
+#### SDE vs. ODE Sampling
 
 The sampling method depends on the **training method** (`flow_variant`).
 
