@@ -90,18 +90,21 @@ generated_samples = cfm_machine.sample(
 
 ## 4\. 🔬 Supported Flow Matching Variants
 
-Your library supports a broad range of state-of-the-art CFM variants, defined by their coupling and path geometry.
 
-### A. Endpoint Coupling Strategies ($q(\mathbf{z})$)
+***
 
-These variants define the target joint distribution of the endpoints.
+### A. Advanced Conditional Flow Matching (CFM) Variants
 
-| CFM Variant Name | Target Joint $q(\mathbf{z})$ | Implementation Strategy |
-| :--- | :--- | :--- |
-| **ConditionalFlowMatcher** | $q(\mathbf{x}_0)q(\mathbf{x}_1)$ | Standard **Independent** coupling. |
-| **TargetConditionalFlowMatcher** | $q(\mathbf{x}_1)$ | Flow learned from **Gaussian Prior** ($\mathbf{x}_0$) to **Data** ($\mathbf{x}_1$). |
-| **ExactOT-CFM / SchrodingerBridgeCFM** | $\pi(\mathbf{x}_0, \mathbf{x}_1)$ or $\pi_{\epsilon}(\mathbf{x}_0, \mathbf{x}_1)$ | Approximates OT/SB joint distribution via **minibatch Sinkhorn optimization**. |
+These flow matching strategies utilize specific endpoint couplings ($q(\mathbf{z})$) and path definitions to achieve optimal transport, stochastic flows, or geometrically specific generation.
 
+| CFM Variant Name | Target Joint $q(\mathbf{z})$ | Path Strategy / Geometry | Implementation Key |
+| :--- | :--- | :--- | :--- |
+| **ConditionalFlowMatcher** | $q(\mathbf{x}_0)q(\mathbf{x}_1)$ (Independent) | Typically **Linear Path** | `"independent"` coupling |
+| **VariancePreservingCFM** | $q(\mathbf{x}_0)q(\mathbf{x}_1)$ (Independent) | Conditional Gaussian path (**VP path**) | `"variance_preserving_cfm"` interpolant |
+| **TargetConditionalFlowMatcher** | Implicit $\pi(\mathbf{x}_0 \mid \mathbf{x}_1)$ | Linear path from $\mathcal{N}(\mathbf{0}, \mathbf{I})$ to data $\mathbf{x}_1$ | `"target_cfm"` coupling |
+| **ExactOT-CFM / SchrodingerBridgeCFM** | $\pi(\mathbf{x}_0, \mathbf{x}_1)$ or $\pi_{\epsilon}(\mathbf{x}_0, \mathbf{x}_1)$ | Linear path | `"schrodinger_bridge_cfm"` coupling (uses **Sinkhorn approx.**) |
+
+***
 ### B. Path Geometries and Solvers
 
 These define the specific nature of the interpolation $\mathbf{x}(t)$.
