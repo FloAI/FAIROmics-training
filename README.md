@@ -4,7 +4,7 @@ I've ensured the three data loading modes are prominently featured.
 
 -----
 
-# 🧬 Metagenomics Conditional Flow Matching (CFM) Library
+# 🧬 CFM_Lab
 
 [](https://www.python.org/downloads/)
 [](https://opensource.org/licenses/MIT)
