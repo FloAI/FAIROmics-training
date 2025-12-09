@@ -102,7 +102,7 @@ These flow matching strategies utilize specific endpoint couplings ($q(\mathbf{z
 | **ConditionalFlowMatcher** | $q(\mathbf{x}_0)q(\mathbf{x}_1)$ (Independent) | Typically **Linear Path** | `"independent"` coupling |
 | **VariancePreservingCFM** | $q(\mathbf{x}_0)q(\mathbf{x}_1)$ (Independent) | Conditional Gaussian path (**VP path**) | `"variance_preserving_cfm"` interpolant |
 | **TargetConditionalFlowMatcher** | Implicit $\pi(\mathbf{x}_0 \mid \mathbf{x}_1)$ | Linear path from $\mathcal{N}(\mathbf{0}, \mathbf{I})$ to data $\mathbf{x}_1$ | `"target_cfm"` coupling |
-| **ExactOT-CFM / SchrodingerBridgeCFM** | $\pi(\mathbf{x}_0, \mathbf{x}_1)$ or $\pi_{\epsilon}(\mathbf{x}_0, \mathbf{x}_1)$ | Linear path | `"schrodinger_bridge_cfm"` coupling (uses **Sinkhorn approx.**) |
+| **ExactOT-CFM / SchrodingerBridgeCFM** | $pi(x0, x1), pi_epsilon(x0, x1)$ | Linear path | `"schrodinger_bridge_cfm"` coupling (uses **Sinkhorn approx.**) |
 
 ***
 ### B. Path Geometries and Solvers
