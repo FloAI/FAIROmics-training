@@ -152,3 +152,61 @@ While the **L2 loss** (`"l2"`) on the velocity field is the default for all CFM 
 | **`"ot_sinkhorn"`** | Optimal Transport (OT) Distance | Used as a **metric for evaluation** or as an advanced loss for comparing predicted flow density to target density. |
 
 ---
+
+## 🧬 CFM Library Workflow
+
+The pipeline is primarily driven by the single entry point, `generate_samples_from_csv(...)`, which encapsulates four sequential phases: Configuration, Data Loading, Training, and Sampling.
+
+---
+
+## 1. ⚙️ Phase I: Configuration and Initialization
+
+This phase sets the stage by defining all parameters, including the CFM variant, network structure, and training hyper-parameters.
+
+1.  **Input:** The user calls `generate_samples_from_csv(..., **CONFIG_OVERRIDES)`.
+2.  **Configuration:** The function internally creates a `CFMConfig` object using the user's overrides.
+    * **Determines Flow:** Sets the `interpolant` (e.g., `"alpha_flow"`, `"linear"`) and `coupling` mode (e.g., `"target_cfm"`, `"schrodinger_bridge_cfm"`).
+    * **Sets Dynamics:** Defines SDE/ODE parameters (`flow_variant`, `stochastic_noise_scale`, `solver`).
+3.  **Model Setup:** A `CFMMachine` instance is initialized, which builds the core velocity model ($\mathbf{v}_\theta$) using the specified `model_type` (`"mlp"` or `"transformer"`).
+
+---
+
+## 2. 💾 Phase II: Data Loading and Preprocessing
+
+The library handles data preparation, transforming raw CSV inputs into processed PyTorch data loaders.
+
+1.  **Data Loading:** The `load_data_from_config` function reads the CSV(s) based on the user's chosen mode (Mode 1, 2, or 3).
+    * **Feature Extraction ($\mathbf{X}$):** Selects numerical columns for the generative features.
+    * **Conditioning ($\mathbf{Y}$):** If a `condition_column_name` is provided, the column is extracted and **One-Hot Encoded** to create the conditioning vector $\mathbf{Y}$.
+2.  **Optional Preprocessing:** (If manually enabled in the calling script) The raw feature data is transformed, e.g., using the **CLR transformation** (`apply_clr_transform`) for compositional data.
+3.  **Data Setup:** The processed $\mathbf{X}$ and $\mathbf{Y}$ matrices are converted into a `MetagenomicsDataset` object, which is then wrapped in a PyTorch `DataLoader`.
+
+---
+
+## 3. 🧠 Phase III: Training and Flow Matching
+
+This is the core learning phase, where the velocity model $\mathbf{v}_\theta$ is trained to match the target velocity $\mathbf{v}^*$ defined by the chosen CFM variant.
+
+1.  **Batch Iteration:** The `CFMMachine.train()` method iterates through batches ($\mathbf{x}_B$, $\mathbf{y}_B$).
+2.  **Endpoint Coupling (Critical Step):** The library executes the specific coupling strategy:
+    * It uses the `get_coupling_x0_x1` dispatcher function (in `coupling.py`) based on the chosen CFM variant (e.g., `"target_cfm"`, `"schrodinger_bridge_cfm"`).
+    * This pairs the batch data $\mathbf{x}_0$ (or sampled prior) with the target endpoint $\mathbf{x}_1$ (prior or matched data) to form the joint $\mathbf{z} = (\mathbf{x}_0, \mathbf{x}_1)$.
+3.  **Path and Target Velocity:**
+    * A random time $t \sim U(0, 1)$ is sampled.
+    * The instantaneous state $\mathbf{x}_t = \mathbf{x}(t)$ is calculated using the configured **interpolant** (`"linear"`, `"alpha_flow"`, etc.).
+    * The **Target Velocity** $\mathbf{v}^*$ is calculated as the derivative of the path $d\mathbf{x}(t)/dt$.
+4.  **Loss Calculation:** The model predicts the velocity $\mathbf{v}_\theta = \mathbf{v}_\theta(\mathbf{x}_t, t, \mathbf{y}_B)$, and the loss is computed (default is $\text{L}_2$ on velocities, or a specialized loss like `"vfm_poisson_nll"`).
+5.  **Optimization:** The model parameters are updated via backpropagation and the configured optimizer.
+
+---
+
+## 4. 🚀 Phase IV: Sampling and Generation
+
+Once trained, the model is used as a vector field to generate new, synthetic data by integrating the flow backward in time.
+
+1.  **Initialization:** The sampling process begins at $t=1$ by sampling $\mathbf{x}_1$ from the **prior distribution** (usually Gaussian noise).
+2.  **Conditional Input:** The desired conditioning vector $\mathbf{y}_{template}$ (e.g., the one-hot vector for 'Healthy') is prepared.
+3.  **Integration:** The `CFMMachine.sample()` method uses the configured **solver** (`"rk4"` for deterministic, `"euler_maruyama"` for stochastic) to integrate the flow backward from $t=1$ to $t=0$:
+    * $\mathbf{x}_{t - \Delta t} \approx \mathbf{x}_t - \mathbf{v}_\theta(\mathbf{x}_t, t, \mathbf{y}_{template}) \cdot \Delta t$
+    * 
+4.  **Output:** The final state $\mathbf{x}_0$ is the generated synthetic data, which is returned to the user as a NumPy array.
