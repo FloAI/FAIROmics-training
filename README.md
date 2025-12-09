@@ -126,20 +126,6 @@ The sampling method depends on the **training method** (`flow_variant`).
 | **Deterministic (ODE)** | `"deterministic"` (Default) | `"rk4"` (Default), `"euler"`, `"heun"` | Integration is exact and repeatable. |
 | **Stochastic (SDE)** | **`"stochastic"`** | **`"euler_maruyama"`** (Auto-selected) | Integration includes a diffusion term, yielding diverse, noisy samples. |
 
-You are absolutely right! In the context of the advanced flow matching variants, the specific **loss function** used is often as important as the coupling method.
-
-While the primary loss in CFM is still the $\text{L}_2$ distance between the predicted velocity ($v_\theta$) and the target velocity ($v^*$), the EF-VFM variant introduces specialized losses.
-
-Here is the final table detailing the losses and their primary use case, ready for your `README.md`.
-
----
-That's a crucial piece of the puzzle! The core of your library is the velocity model, $\mathbf{v}_\theta(\mathbf{x}_t, t, \mathbf{y})$, which predicts the flow direction.
-
-The library includes flexible neural network architectures suitable for high-dimensional and tabular data, allowing you to choose the complexity and approach that best suits your feature set.
-
-Here is the table detailing the model architectures available in your library for the velocity field, suitable for inclusion in your `README.md`.
-
----
 
 ## 💻 Model Architectures for Velocity Field
 
