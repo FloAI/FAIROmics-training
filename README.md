@@ -35,12 +35,10 @@ The library loads data directly from **CSV files** via the `data_path` parameter
 
 ### Data Loading Modes
 
-| Mode | Configuration | Description |
-| :--- | :--- | :--- |
-| **Mode 1: Single File + Column** | `data_path='file.csv'`, **`condition_column_name='Age_Group'`** | Features ($\mathbf{X}$) and condition ($\mathbf{Y}$) are in one CSV file. **Recommended method.** |
-| **Mode 2: Two Separate Files** | `data_path='features.csv'`, **`cond_path='metadata.csv'`** | $\mathbf{X}$ and $\mathbf{Y}$ are split across two aligned CSV files. |
-
------
+Mode,Configuration,Description
+Mode 1: Single File + Column,"data_path='file.csv', condition_column_name='Age_Group'",Features (X) and condition (Y) are in one CSV file. Recommended method.
+Mode 2: Two Separate Files,"data_path='features.csv', cond_path='metadata.csv'",X and Y are split across two aligned CSV files.
+Mode 3: Unconditional,"data_path='file.csv', condition_column_name=None","Training a generative model using only features (X), ignoring any conditional columns."
 
 ## 3\. 🚀 Core Workflow: One-Shot Generation
 
