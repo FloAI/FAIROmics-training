@@ -125,3 +125,25 @@ The sampling method depends on the **training method** (`flow_variant`).
 | :--- | :--- | :--- | :--- |
 | **Deterministic (ODE)** | `"deterministic"` (Default) | `"rk4"` (Default), `"euler"`, `"heun"` | Integration is exact and repeatable. |
 | **Stochastic (SDE)** | **`"stochastic"`** | **`"euler_maruyama"`** (Auto-selected) | Integration includes a diffusion term, yielding diverse, noisy samples. |
+
+You are absolutely right! In the context of the advanced flow matching variants, the specific **loss function** used is often as important as the coupling method.
+
+While the primary loss in CFM is still the $\text{L}_2$ distance between the predicted velocity ($v_\theta$) and the target velocity ($v^*$), the EF-VFM variant introduces specialized losses.
+
+Here is the final table detailing the losses and their primary use case, ready for your `README.md`.
+
+---
+
+### E. Specialized Loss Functions
+
+While the **L2 loss** (`"l2"`) on the velocity field is the default for all CFM variants, the library includes specialized losses for robustness and incorporating specific probabilistic assumptions (like those needed for Exponential Family Variational Flow Matching).
+
+| Loss Key | Underlying Principle | Use Case |
+| :--- | :--- | :--- |
+| **`"l2"`** | Euclidean Distance on velocity: $E[\|v_\theta - v^*\|^2]$ | Default for all standard/OT/SB/VP flows. |
+| **`"huber"`, `"l1"`, `"charbonnier"`** | Robust Regression | Use when training data or velocity fields are noisy, prone to outliers. |
+| **`"poisson"`** | Poisson Negative Log-Likelihood (NLL) | Count data regression (predicting rates); suitable for exponential family assumptions. |
+| **`"vfm_poisson_nll"`** | **EF-VFM Proxy Loss** | Specifically designed for **Exponential Family Variational Flow Matching** (EF-VFM) on count-like data (e.g., metagenomics). |
+| **`"ot_sinkhorn"`** | Optimal Transport (OT) Distance | Used as a **metric for evaluation** or as an advanced loss for comparing predicted flow density to target density. |
+
+---
