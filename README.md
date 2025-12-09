@@ -139,6 +139,27 @@ The choice of model architecture is controlled by the `model_type` parameter in 
 
 ---
 
+## 5. 📏 Adapting to Data Dimensionality
+
+The **`CFM_Lab`** library is designed to perform optimally across various data scales by allowing the user to select specialized neural network architectures for the velocity field ($\mathbf{v}_\theta$). This choice is controlled by the `model_type` parameter.
+
+### Model Architectures for Velocity Field
+
+The optimal model depends on the dimensionality ($D$) of your feature space.
+
+| Model Key | Architecture | Best Dimensionality | Description |
+| :--- | :--- | :--- | :--- |
+| **`"mlp"`** | Multi-Layer Perceptron (MLP) | **Low to Moderate $D$** ($D \approx 1$ to $100$) | The standard feed-forward network. Highly efficient for simpler flow fields where feature interactions are local or linear.  |
+| **`"transformer"`** | Transformer Encoder | **High $D$** ($D > 100$) | Uses self-attention to model complex, long-range dependencies between features (treating each feature as a token). Essential for structured or high-volume datasets like genomics. |
+| **`"autoencoder_latent"`** | MLP on Latent Space | **High $D$** with Manifold Structure | Used when the true information lies on a low-dimensional manifold; the flow is learned in the compressed latent space. |
+
+### 💡 Suggested Best Practice
+
+When configuring your model, choose the architecture based on your feature count:
+
+* **Low-D (e.g., Nutritional Data, $D<50$):** Set `"model_type": "mlp"`. This minimizes computational cost and avoids overfitting to small feature sets.
+* **High-D (e.g., Metagenomics, $D>100$):** Set `"model_type": "transformer"`. This leverages attention mechanisms to capture global correlations essential for complex scientific data.
+
 ### E. Specialized Loss Functions
 
 While the **L2 loss** (`"l2"`) on the velocity field is the default for all CFM variants, the library includes specialized losses for robustness and incorporating specific probabilistic assumptions (like those needed for Exponential Family Variational Flow Matching).
