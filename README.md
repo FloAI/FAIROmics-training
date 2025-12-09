@@ -1,3 +1,9 @@
+That's great\! You want this comprehensive list of supported flow strategies included in your final `README.md` to highlight the library's advanced capabilities beyond standard CFM.
+
+Here is the complete content for the **`README.md`** file, now incorporating this detailed feature list and the strategic use of image tags.
+
+-----
+
 # 🧬 Metagenomics Conditional Flow Matching (CFM) Library
 
 [](https://www.python.org/downloads/)
@@ -23,50 +29,17 @@ Ensure your project repository contains the `metagenomics_cfm` directory with al
 
 -----
 
-
-## 2\. 💾 Data Preparation and Modes (Revised)
+## 2\. 💾 Data Preparation and Modes
 
 The library loads data directly from **CSV files** via the `data_path` parameter. It automatically handles feature selection, categorical **One-Hot Encoding**, and train/validation splitting.
 
 ### Data Loading Modes
 
-You must choose one of the following modes by setting the appropriate parameters in `CFMConfig`.
-
 | Mode | Configuration | Description |
 | :--- | :--- | :--- |
 | **Mode 1: Single File + Column** | `data_path='file.csv'`, **`condition_column_name='Age_Group'`** | Features ($\mathbf{X}$) and condition ($\mathbf{Y}$) are in one CSV file. **Recommended method.** |
 | **Mode 2: Two Separate Files** | `data_path='features.csv'`, **`cond_path='metadata.csv'`** | $\mathbf{X}$ and $\mathbf{Y}$ are split across two aligned CSV files. |
-| **Mode 3: Unconditional** | `data_path='file.csv'`, **`condition_column_name=None`** | Training a generative model using only features ($\mathbf{X}$), ignoring any conditional columns. |
 
------
-
-## 3\. 🚀 Core Workflow: One-Shot Generation (Example Mode 3)
-
-### Unconditional Example (Mode 3)
-
-This is the simplest configuration, used when you want a general generative model that does not depend on metadata.
-
-```python
-from metagenomics_cfm import generate_samples_from_csv
-
-# 1. Define input file and desired output
-DATA_FILE = "data/all_features.csv" 
-NUM_SAMPLES = 100
-
-# 2. Configure for Mode 3: Omit the condition_column_name parameter
-synthetic_data = generate_samples_from_csv(
-    data_path=DATA_FILE,
-    num_samples=NUM_SAMPLES,
-    
-    # --- Mode 3 Setup ---
-    # condition_column_name is omitted or set to None
-    
-    epochs=20, 
-    device='cpu' 
-)
-
-print(f"Generated samples shape (Unconditional): {synthetic_data.shape}")
-```
 -----
 
 ## 3\. 🚀 Core Workflow: One-Shot Generation
@@ -86,28 +59,19 @@ NUM_SAMPLES = 50
 synthetic_data = generate_samples_from_csv(
     data_path=DATA_FILE,
     num_samples=NUM_SAMPLES,
-    
-    # Specify the column to condition on (Mode 1 setup)
     condition_column_name="Device_Type", 
-    
-    # Optional Overrides:
-    epochs=40, 
-    device='cuda',
+    epochs=40
 )
-
-print(f"Generated data shape: {synthetic_data.shape}")
 ```
 
 ### Conditional Sampling Control
 
 To control the generated output, you must provide the exact **one-hot template vector** ($\mathbf{y}_{template}$) that represents the desired category.
 
-The loader automatically performs **One-Hot Encoding** on categorical columns:
-
-The template vector must be shaped $(1, C)$ and match the dimensions created by the automatic encoding of your categorical column.
+The vector must be shaped $(1, C)$ and match the dimensions created by the automatic encoding of your categorical column.
 
 ```python
-# The vector must be manually verified to match the encoding order (e.g., [Desktop, Mobile, Tablet])
+# The vector must be manually verified to match the encoding order (e.g., [Healthy, Diseased, Other])
 template_np = np.array([[0.0, 1.0, 0.0]]) 
 
 generated_samples = cfm_machine.sample(
@@ -118,69 +82,40 @@ generated_samples = cfm_machine.sample(
 
 -----
 
-## 4\. 🔬 Advanced CFM Features and Dynamics
+## 4\. 🔬 Supported Flow Matching Variants
 
-### A. Path Interpolants (`interpolant`)
+Your library is equipped to handle a wide range of state-of-the-art flow matching strategies, defined by their target joint distribution $q(\mathbf{z})$ and path geometry $\mathbf{x}(t)$.
 
-The CFM objective minimizes the difference between the model's velocity field ($\mathbf{v}_\theta$) and the true path velocity ($\mathbf{v}^*$) defined by the interpolant between $\mathbf{x}_0$ (data) and $\mathbf{x}_1$ (prior).
+### A. Endpoint Coupling Strategies ($q(\mathbf{z})$)
 
-| Key | Description | Best Use Case |
+These variants define how the source ($\mathbf{x}_0$) and target ($\mathbf{x}_1$) endpoints are coupled, affecting the target velocity field $\mathbf{v}^*$.
+
+| CFM Variant Name | Target Joint $q(\mathbf{z})$ | Internal Coupling Key | Description |
+| :--- | :--- | :--- | :--- |
+| **ConditionalFlowMatcher** | $q(\mathbf{x}_0)q(\mathbf{x}_1)$ | `"independent"` | Standard independent endpoint CFM. |
+| **TargetConditionalFlowMatcher** | $q(\mathbf{x}_1)$ | `"target_cfm"` | Learns flow from Gaussian ($\mathbf{x}_0$) to Data ($\mathbf{x}_1$). |
+| **VariancePreservingCFM** | $q(\mathbf{x}_0)q(\mathbf{x}_1)$ | `"independent"` | Uses independent coupling with the specialized VP path. |
+| **ExactOT-CFM / SchrodingerBridgeCFM** | $\pi(\mathbf{x}_0, \mathbf{x}_1)$ or $\pi_{\epsilon}(\mathbf{x}_0, \mathbf{x}_1)$ | `"schrodinger_bridge_cfm"` | Approximates Optimal Transport (OT) or Schrödinger Bridge coupling via **minibatch Sinkhorn optimization**. |
+
+### B. Path Geometries and Specialized Flows
+
+These interpolation methods define the path $\mathbf{x}(t)$ regardless of endpoint coupling.
+
+| Interpolant Key | Geometry / Concept | Primary Use Case |
 | :--- | :--- | :--- |
-| **`"linear"`** | Standard straight-line interpolation (Euclidean). | General data, baseline testing. |
-| **`"log"`** | Log-space interpolation. | **Compositional data** (CLR-transformed counts) where values must remain positive/relative. |
-| **`"spherical"`** | Interpolation on a hypersphere. | Normalized data, directional features. |
+| **`"linear"`** | Straight-line path (Standard) | General, Euclidean data, baseline testing. |
+| **`"alpha_flow"`** | **Generalized Geodesic Path.** | Compositional data, flows on statistical manifolds (e.g., $\alpha=0$ is log-Euclidean). |
+| **`"log"`** | Log-Euclidean path. | **Compositional data** (counts, relative abundances), ensuring positivity. |
+| **`"spherical"`** | Geodesic path on a hypersphere. | Normalized data, directional features. |
+| **`"vp"`** | Variance-Preserving (VP) path. | Flows where maintaining noise variance structure is key. |
+| **`"sparseaware"`** | Zero-aware path. | Improves stability for sparse data by smoothing paths near zero values. |
+| **`"latent"`** | Path in a lower-dimensional latent space. | Reducing interpolation complexity for high-dimensional data. |
 
-### B. SDE vs. ODE Solvers
+### C. SDE vs. ODE Solvers
 
-The sampling method depends on the **training method** (`flow_variant`). The library handles the automatic switch to the SDE solver when noise ($\sigma > 0$) is detected in training.
+The sampling method depends on the **training method** (`flow_variant`).
 
 | Mode | `flow_variant` (Training) | `solver` (Sampling) | Behavior |
 | :--- | :--- | :--- | :--- |
 | **Deterministic (ODE)** | `"deterministic"` (Default) | `"rk4"` (Default), `"euler"`, `"heun"` | Integration is exact and repeatable. |
-| **Stochastic (SDE)** | **`"stochastic"`** | **`"euler_maruyama"`** (Auto-selected) | Integration includes a diffusion term, yielding diverse, noisy paths. |
-
-#### Example SDE Configuration
-
-```python
-cfg = CFMConfig(
-    # Training: Add noise to the target velocity (Stochastic Flow Matching)
-    flow_variant="stochastic",         
-    stochastic_noise_scale=0.2,        # Set diffusion magnitude (Sigma)
-    
-    # Sampling: Use the SDE integrator (set to euler_maruyama)
-    solver="euler_maruyama"            
-)
-```
-
-# ------------------------------------------------------------------
-# Applying CLR transform
-# ------------------------------------------------------------------
-
-def generate_samples_from_csv(
-    data_path: str,
-    # ... (other arguments) ...
-) -> np.ndarray:
-    
-    # ... (Step 1 & 2: Configuration and Loading) ...
-    
-    print(f"Loading data from {cfg.data_path}...")
-    data, cond, x_dim, cond_dim = load_data_from_config(cfg)
-    
-    # --- START CLR INTEGRATION ---
-    print("Applying Centered Log-Ratio (CLR) transformation...")
-    
-    # NOTE: This assumes your CSV features (data) are non-negative counts or 
-    # relative abundances that require CLR. If the data is already transformed 
-    # (e.g., already log-normalized), skip this step.
-    
-    from .data_utils import apply_clr_transform # Import CLR utility locally
-    
-    data = apply_clr_transform(data) 
-    
-    print(f"CLR successful. Feature dimension remains ({data.shape[1]}).")
-    # --- END CLR INTEGRATION ---
-    
-    # 3. Prepare Datasets (Splitting and Machine Initialization follow here)
-    cfg.cond_dim = cond_dim 
-    
-    # ... (rest of the function continues) ...
+| **Stochastic (SDE)** | **`"stochastic"`** | **`"euler_maruyama"`** (Auto-selected) | Integration includes a diffusion term, yielding diverse, noisy samples. |
